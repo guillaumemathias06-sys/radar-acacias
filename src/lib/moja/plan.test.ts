@@ -230,3 +230,15 @@ describe("planMojaIngest — e-mail familial", () => {
     expect(new Set(plan.contactsToInsert.map((c) => c.fft_crm_id)).size).toBe(2);
   });
 });
+
+describe("planMojaIngest — inscription sans numéro Moja", () => {
+  it("garde le joueur et lui donne une clé d'inscription stable", () => {
+    const sansId = { ...joueur(103, 3, "marc", "leroy", null, null, 5001) } as { epreuves: Record<string, unknown>[] };
+    sansId.epreuves = sansId.epreuves.map(({ insId: _omit, ...rest }) => rest);
+    const plan = planMojaIngest(snapshot([sansId]), [], { today: "2026-11-17", newId });
+    expect(plan.warnings).toEqual([]);
+    expect(plan.contactsToInsert).toHaveLength(1);
+    expect(plan.registrations[0].moja_ins_id).toBe(-678986);
+    expect(plan.counts.registrations_without_moja_id).toBe(1);
+  });
+});

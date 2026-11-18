@@ -55,7 +55,8 @@ export type MojaEpreuve = z.infer<typeof epreuveSchema>;
 export const joueurEpreuveSchema = z
   .object({
     eprId: z.number(),
-    insId: z.number(),
+    // Absent pour certaines inscriptions (observé le 18/11/2026) : le joueur reste valide.
+    insId: z.number().nullish(),
     statutInscriptionCode: z.string().nullish(),
     dateInscription: z.string().nullish(),
   })

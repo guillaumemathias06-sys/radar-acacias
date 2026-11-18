@@ -1,4 +1,5 @@
 import { cleanName, eurosToCents, normalizeEmail, normalizePhone, parisLocalToIso, titleCase } from "@/lib/contacts/normalize";
+import { normalizePadelCategory } from "@/lib/tournaments/segments";
 import type { MojaDisponibilite, MojaEpreuve, MojaHomologation, MojaJoueur } from "./schemas";
 
 /**
@@ -70,7 +71,7 @@ export function toEventRow(e: MojaEpreuve): EventRow {
     label: cleanName(e.libelle) ?? String(e.eprId),
     nature: e.natureCategorieEpreuve ?? null,
     age_category: e.libelleCategorieAge ?? null,
-    padel_category: e.categorie ?? null,
+    padel_category: normalizePadelCategory(e.categorie),
     rank_min: cleanName(e.classementMin),
     rank_max: cleanName(e.classementMax),
     age_min: e.ageMin ?? null,
@@ -164,7 +165,8 @@ export function toRegistrations(j: MojaJoueur): RegistrationFromMoja[] {
   return epreuves.map((e) => ({
     fft_crm_id: j.idCrm,
     moja_epr_id: e.eprId,
-    moja_ins_id: e.insId,
+    // Sans numéro Moja, clé stable de remplacement : -eprId (unique avec contact_id).
+    moja_ins_id: e.insId ?? -e.eprId,
     status_code: (e.statutInscriptionCode ?? "").trim() || "?",
     status: toRegistrationStatus(e.statutInscriptionCode),
     registered_at: parisLocalToIso(e.dateInscription),

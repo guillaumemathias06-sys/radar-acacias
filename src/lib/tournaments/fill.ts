@@ -3,7 +3,7 @@
  *
  * Pour chaque épreuve à venir, on compare le nombre d'inscrits actuel à
  * une référence : la moyenne finale des épreuves passées comparables
- * (même catégorie padel, ou même nature + catégorie d'âge en tennis).
+ * (même catégorie padel, ou même nature + âge + plage de classements en tennis).
  * Sans historique comparable, on n'invente pas de référence : seules les
  * règles absolues (0 inscrit à l'approche) s'appliquent.
  */
@@ -15,6 +15,8 @@ export interface FillEvent {
   nature: string | null;
   ageCategory: string | null;
   padelCategory: string | null;
+  rankMin?: string | null;
+  rankMax?: string | null;
   startsOn: string | null;
   registeredCount: number;
 }
@@ -30,9 +32,10 @@ export interface FillStatus {
   reason: string;
 }
 
-export function comparableKey(e: Pick<FillEvent, "nature" | "ageCategory" | "padelCategory">): string {
+export function comparableKey(e: Pick<FillEvent, "nature" | "ageCategory" | "padelCategory" | "rankMin" | "rankMax">): string {
   if (e.padelCategory) return `padel:${e.padelCategory}:${e.nature ?? ""}`;
-  return `tennis:${e.nature ?? ""}:${e.ageCategory ?? ""}`;
+  // Tennis : même nature, même âge ET même plage de classements (un TMC 30/4-30/1 ne se compare pas à un Open).
+  return `tennis:${e.nature ?? ""}:${e.ageCategory ?? ""}:${e.rankMin ?? ""}-${e.rankMax ?? ""}`;
 }
 
 function daysBetween(fromIso: string, toIso: string): number {

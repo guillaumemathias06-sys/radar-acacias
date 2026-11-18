@@ -218,6 +218,9 @@ export function planMojaIngest(snapshot: MojaSnapshot, existing: ContactRecord[]
       unknown_status: keptRegs.filter((r) => r.status === "other").length,
       conversions: conversions.length,
       availabilities: availabilities.length,
+      registrations_without_moja_id: keptRegs.filter((r) => r.moja_ins_id < 0).length,
+      // Codes de statut rencontrés (« statut_PAR »…) : c'est ainsi qu'on découvrira le code de la liste d'attente.
+      ...keptRegs.reduce<Record<string, number>>((acc, r) => ({ ...acc, [`statut_${r.status_code}`]: (acc[`statut_${r.status_code}`] ?? 0) + 1 }), {}),
     },
   };
 }

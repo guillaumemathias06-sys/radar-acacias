@@ -12,6 +12,8 @@ interface EventJoinRow {
   nature: string | null;
   age_category: string | null;
   padel_category: string | null;
+  rank_min: string | null;
+  rank_max: string | null;
   starts_on: string | null;
   registered_count: number | null;
   tournaments: { label: string; moja_hom_id: number } | null;
@@ -25,7 +27,7 @@ export async function loadFillStatuses() {
     (from, to) =>
       db
         .from("tournament_events")
-        .select("id, label, nature, age_category, padel_category, starts_on, registered_count, tournaments(label, moja_hom_id)")
+        .select("id, label, nature, age_category, padel_category, rank_min, rank_max, starts_on, registered_count, tournaments(label, moja_hom_id)")
         .order("id")
         .range(from, to) as unknown as PromiseLike<{ data: EventJoinRow[] | null; error: { message: string } | null }>,
   );
@@ -38,6 +40,8 @@ export async function loadFillStatuses() {
     nature: e.nature,
     ageCategory: e.age_category,
     padelCategory: e.padel_category,
+    rankMin: e.rank_min,
+    rankMax: e.rank_max,
     startsOn: e.starts_on,
     registeredCount: e.registered_count ?? 0,
   }));
