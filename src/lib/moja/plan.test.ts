@@ -178,6 +178,7 @@ describe("normalisation", () => {
   it("statuts d'inscription", () => {
     expect(toRegistrationStatus("PAR")).toBe("participant");
     expect(toRegistrationStatus("ATT")).toBe("waiting_list");
+    expect(toRegistrationStatus("NPA")).toBe("not_participant");
     expect(toRegistrationStatus(null)).toBe("other");
   });
 

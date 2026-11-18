@@ -94,10 +94,12 @@ export function toEventRow(e: MojaEpreuve): EventRow {
  * est donc classé « other » et gardé brut (status_code) — jamais deviné
  * en participant, pour ne pas compter de fausses conversions.
  */
-export function toRegistrationStatus(code: string | null | undefined): "participant" | "waiting_list" | "other" {
+export function toRegistrationStatus(code: string | null | undefined): "participant" | "waiting_list" | "not_participant" | "other" {
   const c = (code ?? "").trim().toUpperCase();
   if (c === "PAR" || c === "PARTICIPANT") return "participant";
   if (c === "ATT" || c === "LAT" || c.includes("ATTENTE")) return "waiting_list";
+  // NPA : inscrit mais n'a pas joué (non retenu, désinscrit ou forfait) — voir migration 003.
+  if (c === "NPA") return "not_participant";
   return "other";
 }
 
@@ -147,7 +149,7 @@ export interface RegistrationFromMoja {
   moja_epr_id: number;
   moja_ins_id: number;
   status_code: string;
-  status: "participant" | "waiting_list" | "other";
+  status: "participant" | "waiting_list" | "not_participant" | "other";
   registered_at: string | null;
   amount_due_cents: number | null;
   amount_paid_cents: number | null;

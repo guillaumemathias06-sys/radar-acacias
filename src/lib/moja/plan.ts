@@ -18,7 +18,7 @@ export interface PlannedRegistration {
   contact_id: string;
   moja_ins_id: number;
   status_code: string;
-  status: "participant" | "waiting_list" | "other";
+  status: "participant" | "waiting_list" | "not_participant" | "other";
   registered_at: string | null;
   amount_due_cents: number | null;
   amount_paid_cents: number | null;
@@ -215,6 +215,7 @@ export function planMojaIngest(snapshot: MojaSnapshot, existing: ContactRecord[]
       contacts_updated: updated.size,
       registrations: keptRegs.length,
       waiting_list: keptRegs.filter((r) => r.status === "waiting_list").length,
+      not_participant: keptRegs.filter((r) => r.status === "not_participant").length,
       unknown_status: keptRegs.filter((r) => r.status === "other").length,
       conversions: conversions.length,
       availabilities: availabilities.length,
