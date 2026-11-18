@@ -40,12 +40,28 @@
     }
   }
 
+  // Moja range son jeton dans le cookie « access_token » et l'envoie lui-même en
+  // en-tête Authorization. On fait pareil, en le relisant à chaque requête pour
+  // suivre son renouvellement par l'application pendant un long import.
+  function accessToken() {
+    const row = document.cookie.split("; ").find((c) => c.startsWith("access_token="));
+    return row ? decodeURIComponent(row.slice("access_token=".length)) : null;
+  }
+
   async function getJson(path) {
     await sleep(PAUSE_MS);
-    const res = await fetch(new URL(path, location.origin), { credentials: "include", headers: { Accept: "application/json" } });
+    const token = accessToken();
+    if (!token) throw new Error("Pas de jeton Moja dans cet onglet : recharge Moja, connecte-toi, puis reclique sur le bouton.");
+    const res = await fetch(new URL(path, location.origin), {
+      credentials: "include",
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+    });
     const type = res.headers.get("content-type") ?? "";
-    if (res.status === 401 || res.status === 403 || res.redirected || !type.includes("json")) {
-      throw new Error("Session Moja expirée : reconnecte-toi à Moja puis reclique sur le bouton.");
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(`Moja refuse l'accès (${res.status}) : recharge la page Moja puis reclique sur le bouton.`);
+    }
+    if (res.redirected || !type.includes("json")) {
+      throw new Error(`Réponse Moja inattendue (${res.status}, ${type || "sans type"}) sur ${path}.`);
     }
     if (!res.ok) throw new Error(`Moja a répondu ${res.status} sur ${path}`);
     return res.json();
