@@ -12,5 +12,6 @@ describe("describeServiceKey", () => {
     expect(describeServiceKey("sb_publishable_abc")).toMatch(/^publishable/);
     expect(describeServiceKey(jwt("anon"))).toMatch(/^jwt:anon/);
     expect(describeServiceKey("")).toBe("absente");
+    expect(describeServiceKey("sb_secret_ab••••••")).toMatch(/^masquée/);
   });
 });

@@ -8,6 +8,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
  */
 export function describeServiceKey(key = process.env.SUPABASE_SERVICE_ROLE_KEY): string {
   if (!key) return "absente";
+  if (key.includes("•")) return "masquée (copiée depuis l'affichage •••• au lieu du bouton Copier)";
   if (key.startsWith("sb_secret_")) return "secret";
   if (key.startsWith("sb_publishable_")) return "publishable (clé publique, pas la secrète)";
   if (key.startsWith("eyJ")) {
