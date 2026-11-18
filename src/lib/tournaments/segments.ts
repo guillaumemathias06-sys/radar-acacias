@@ -63,3 +63,18 @@ export function eventSegment(e: SegmentInput): { discipline: "padel" | "tennis";
   const parts = [tennisSegment(e.rankMin, e.rankMax), e.ageCategory && e.ageCategory !== "Senior" ? e.ageCategory : null].filter(Boolean);
   return { discipline: "tennis", segment: parts.join(" · ") || "Tennis" };
 }
+
+const RANK_TOKEN = "(NC|40|30\\/[1-5]|30|15\\/[1-5]|15|[1-5]\\/6|0|-2\\/6|-4\\/6|-15|-30)";
+const LABEL_RANGE = new RegExp(`\\b${RANK_TOKEN}\\s*(?:à|a|-|–)\\s*${RANK_TOKEN}(?![\\d/])`, "i");
+
+/**
+ * Plage de classements à retenir. Quand l'épreuve n'a aucune limite saisie
+ * dans Moja (NC → N1 par défaut) mais que le titre du tournoi en annonce une
+ * (« TMC Dames 30/4 à 30/1 »), le titre fait foi.
+ */
+export function effectiveRankRange(rankMin: string | null, rankMax: string | null, label: string | null): { rankMin: string | null; rankMax: string | null } {
+  const unlimited = (!rankMin || rankMin.toUpperCase() === "NC") && (!rankMax || seriesOf(rankMax) === "1re série");
+  const m = label ? LABEL_RANGE.exec(label) : null;
+  if (unlimited && m) return { rankMin: m[1].toUpperCase(), rankMax: m[2].toUpperCase() };
+  return { rankMin, rankMax };
+}

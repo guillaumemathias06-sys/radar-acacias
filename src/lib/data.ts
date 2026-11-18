@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { selectAll } from "@/lib/supabase/selectAll";
 import { parisToday } from "@/lib/contacts/normalize";
 import { assessUpcoming, type FillEvent } from "@/lib/tournaments/fill";
+import { effectiveRankRange } from "@/lib/tournaments/segments";
 
 /** Lectures des pages, avec la session de l'utilisateur (RLS équipe). */
 
@@ -40,8 +41,7 @@ export async function loadFillStatuses() {
     nature: e.nature,
     ageCategory: e.age_category,
     padelCategory: e.padel_category,
-    rankMin: e.rank_min,
-    rankMax: e.rank_max,
+    ...effectiveRankRange(e.rank_min, e.rank_max, e.tournaments?.label ?? null),
     startsOn: e.starts_on,
     registeredCount: e.registered_count ?? 0,
   }));
