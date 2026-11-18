@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  body { width: 280px; margin: 0; padding: 14px; font: 13px/1.45 system-ui, sans-serif; color: #111827; background: #fff; }
+  h1 { font-size: 15px; margin: 0 0 8px; }
+  button { width: 100%; padding: 9px; margin-top: 8px; border-radius: 8px; border: 1px solid #d1d5db; background: #f9fafb; cursor: pointer; font: inherit; }
+  button.primary { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  p { margin: 8px 0 0; color: #4b5563; }
+  .error { color: #b91c1c; }
+  a { color: #2563eb; }
+</style>
+</head>
+<body>
+  <h1>Radar — Moja</h1>
+  <div id="status"></div>
+  <button id="recent" class="primary" disabled>Envoyer les tournois récents</button>
+  <button id="all" disabled>Importer tout l'historique</button>
+  <p id="last"></p>
+  <p><a href="#" id="options">Réglages</a></p>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

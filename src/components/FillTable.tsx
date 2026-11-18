@@ -2,7 +2,7 @@ import type { FillStatus } from "@/lib/tournaments/fill";
 import { Empty, LevelBadge, formatDate } from "@/components/ui";
 
 export function FillTable({ rows }: { rows: FillStatus[] }) {
-  if (!rows.length) return <Empty>Aucun tournoi à venir. Lance une synchronisation Moja depuis ton Mac (voir Réglages).</Empty>;
+  if (!rows.length) return <Empty>Aucun tournoi à venir. Envoie tes tournois depuis Moja avec l&apos;extension Chrome (voir Réglages).</Empty>;
   return (
     <div className="-mx-5 overflow-x-auto">
       <table className="w-full min-w-[640px] text-sm">

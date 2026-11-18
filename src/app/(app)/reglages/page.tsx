@@ -18,12 +18,12 @@ export default async function SettingsPage() {
 
       <Card title="Moja — tournois FFT">
         <p className="text-sm text-muted">
-          Moja n&apos;a pas d&apos;API publique : la collecte tourne sur ton Mac, en lecture seule, avec ta propre session FFT. Depuis le dossier du projet :
+          Moja n&apos;a pas d&apos;API et la FFT bloque les navigateurs automatisés. La collecte passe donc par l&apos;extension Chrome « Radar — Moja », dans ton Chrome habituel, en lecture seule, avec ta propre session.
         </p>
         <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm">
-          <li><code className="rounded bg-background px-1.5 py-0.5">npm run moja:login</code> — une seule fois : tu te connectes dans la fenêtre qui s&apos;ouvre.</li>
-          <li><code className="rounded bg-background px-1.5 py-0.5">npm run moja:collect -- --all</code> — premier import, tout l&apos;historique.</li>
-          <li><code className="rounded bg-background px-1.5 py-0.5">npm run moja:collect</code> — ensuite, chaque matin (automatisable).</li>
+          <li>Ouvre Moja et connecte-toi normalement.</li>
+          <li>Clique sur l&apos;extension, puis « Importer tout l&apos;historique » la première fois.</li>
+          <li>Ensuite, chaque matin : « Envoyer les tournois récents » (une dizaine de secondes).</li>
         </ol>
       </Card>
 

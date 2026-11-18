@@ -8,7 +8,7 @@ Next.js 16 (App Router, `proxy.ts`), Supabase (Postgres + Auth, RLS par équipe)
 ## Sources de données
 | Source | Comment | Fréquence |
 |---|---|---|
-| Moja | `scripts/moja/collect.ts` — Playwright sur le Mac, session FFT persistante, **lecture seule**, envoi vers `POST /api/ingest/moja` (secret `INGEST_SECRET`) | chaque matin |
+| Moja | Extension Chrome `extension/` — clic de Guillaume dans son Chrome habituel, connecté à Moja ; **lecture seule**, envoi vers `POST /api/ingest/moja` (secret `INGEST_SECRET`) | un clic chaque matin |
 | Playtomic | API officielle (identifiants chiffrés en base), `GET /api/cron/sync-playtomic` (secret `CRON_SECRET`) | cron Vercel 5 h UTC |
 
 Toute la logique d'import est pure et testée (`src/lib/moja/plan.ts`, `src/lib/playtomic/plan.ts`) ; les fichiers `ingest.ts` / `sync.ts` ne font qu'écrire le plan.
@@ -26,10 +26,17 @@ Toute la logique d'import est pure et testée (`src/lib/moja/plan.ts`, `src/lib/
 cp .env.example .env.local   # puis remplir
 supabase db push             # applique supabase/migrations
 npm run dev
-npm run moja:login           # une fois
-npm run moja:collect -- --all
 ```
 Après création du compte dans Supabase Auth, l'ajouter à l'équipe :
 ```sql
 insert into team_members (user_id, club_id) values ('<uuid du compte>', '00000000-0000-0000-0000-000000000001');
 ```
+
+## Extension Moja
+La FFT bloque les navigateurs automatisés (« Accès temporairement restreint ») : **pas de script piloté, pas de contournement**. La collecte est déclenchée par un humain, dans son vrai Chrome.
+
+1. `chrome://extensions` → Mode développeur → « Charger l'extension non empaquetée » → dossier `extension/`.
+2. Réglages de l'extension → coller `INGEST_SECRET` (testé auprès de Radar avant d'être enregistré).
+3. Sur Moja, connecté : cliquer l'extension → « Importer tout l'historique » (1re fois) ou « Envoyer les tournois récents ».
+
+Si l'adresse de Radar change : `extension/config.js` et `host_permissions` dans `extension/manifest.json`.
