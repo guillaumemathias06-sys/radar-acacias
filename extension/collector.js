@@ -132,7 +132,8 @@
     const since = new Date(Date.now() - RECENT_DAYS * 86_400_000).toISOString().slice(0, 10);
     // Tournois du club, non refusés par la Ligue (les autres font planter Moja et n'intéressent pas Radar).
     const clubHoms = homologations.filter((h) => h.codeClub === CLUB_CODE && h.statutValidationLigue !== "REFUSE");
-    const targets = clubHoms.filter((h) => mode === "all" || !h.dateFin || String(h.dateFin).slice(0, 10) >= since);
+    // Un brouillon (jamais soumis à la Ligue) n'a pas encore d'épreuves : Moja plante si on demande son détail.
+    const targets = clubHoms.filter((h) => h.statutValidationLigue !== "BROUILLON" && (mode === "all" || !h.dateFin || String(h.dateFin).slice(0, 10) >= since));
     const failed = [];
     const collectedAt = new Date().toISOString();
     const totals = {};
