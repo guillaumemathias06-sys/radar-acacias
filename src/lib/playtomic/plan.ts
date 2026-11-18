@@ -87,7 +87,7 @@ export function planPlaytomicIngest(
       };
 
       if (!contactId) {
-        const match = email ? index.find({ fft_crm_id: null, email, phone: null, last_name: last }) : null;
+        const match = email ? index.find({ fft_crm_id: null, email, phone: null, last_name: last, first_name: candidate.first_name }) : null;
         contactId = match?.id ?? null;
       }
 

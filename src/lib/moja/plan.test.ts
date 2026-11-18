@@ -215,3 +215,18 @@ describe("normalisation", () => {
     expect(plan.warnings).toEqual([]);
   });
 });
+
+describe("planMojaIngest — e-mail familial", () => {
+  it("crée deux fiches pour deux licenciés qui partagent un e-mail", () => {
+    const plan = planMojaIngest(
+      snapshot([
+        joueur(101, 1, "anne", "martin", "famille@example.com", null, 5001),
+        joueur(102, 2, "leo", "martin", "famille@example.com", null, 5001),
+      ]),
+      [],
+      { today: "2026-11-17", newId },
+    );
+    expect(plan.contactsToInsert).toHaveLength(2);
+    expect(new Set(plan.contactsToInsert.map((c) => c.fft_crm_id)).size).toBe(2);
+  });
+});

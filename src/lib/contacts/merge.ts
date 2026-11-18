@@ -30,7 +30,8 @@ export type IncomingContact = Omit<ContactRecord, "id" | "first_seen_at" | "last
 
 export class ContactIndex {
   private byFft = new Map<number, ContactRecord>();
-  private byEmail = new Map<string, ContactRecord>();
+  // Plusieurs fiches par e-mail possibles : adresse familiale partagée.
+  private byEmail = new Map<string, ContactRecord[]>();
   private byPhoneName = new Map<string, ContactRecord>();
 
   constructor(records: ContactRecord[] = []) {
@@ -39,21 +40,31 @@ export class ContactIndex {
 
   add(record: ContactRecord): void {
     if (record.fft_crm_id !== null) this.byFft.set(record.fft_crm_id, record);
-    if (record.email) this.byEmail.set(record.email, record);
+    if (record.email) {
+      const list = (this.byEmail.get(record.email) ?? []).filter((r) => r.id !== record.id);
+      this.byEmail.set(record.email, [...list, record]);
+    }
     const key = phoneNameKey(record.phone, record.last_name);
     if (key) this.byPhoneName.set(key, record);
   }
 
-  find(incoming: Pick<IncomingContact, "fft_crm_id" | "email" | "phone" | "last_name">): ContactRecord | null {
+  find(incoming: Pick<IncomingContact, "fft_crm_id" | "email" | "phone" | "last_name"> & { first_name?: string | null }): ContactRecord | null {
     if (incoming.fft_crm_id !== null) {
       const hit = this.byFft.get(incoming.fft_crm_id);
       if (hit) return hit;
     }
     if (incoming.email) {
-      const hit = this.byEmail.get(incoming.email);
       // Même e-mail mais autre licencié FFT : ce n'est pas la même
       // personne (adresse familiale partagée). On ne fusionne pas.
-      if (hit && (hit.fft_crm_id === null || incoming.fft_crm_id === null || hit.fft_crm_id === incoming.fft_crm_id)) return hit;
+      const compatible = (this.byEmail.get(incoming.email) ?? []).filter(
+        (r) => r.fft_crm_id === null || incoming.fft_crm_id === null || r.fft_crm_id === incoming.fft_crm_id,
+      );
+      if (compatible.length === 1) return compatible[0];
+      if (compatible.length > 1) {
+        // Plusieurs personnes derrière cette adresse : on ne tranche que sur le nom, sinon on ne devine pas.
+        const sameName = compatible.filter((r) => sameText(r.last_name, incoming.last_name) && (incoming.first_name === undefined || sameText(r.first_name, incoming.first_name)));
+        if (sameName.length === 1) return sameName[0];
+      }
     }
     const key = phoneNameKey(incoming.phone, incoming.last_name);
     if (key) {
@@ -62,6 +73,12 @@ export class ContactIndex {
     }
     return null;
   }
+}
+
+function sameText(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return false;
+  const norm = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+  return norm(a) === norm(b);
 }
 
 function phoneNameKey(phone: string | null, lastName: string | null): string | null {
