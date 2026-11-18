@@ -34,8 +34,11 @@ export async function ingestMojaSnapshot(db: AdminClient, clubId: string, snapsh
     const existing = await loadAllContacts(db, clubId);
     if (existing.error) throw new Error(`Lecture des contacts : ${existing.error.message}`);
 
+    const { data: club, error: clubError } = await db.from("clubs").select("fft_club_code").eq("id", clubId).single();
+    if (clubError) throw new Error(`Lecture du club : ${clubError.message}`);
+
     const today = parisToday();
-    const plan = planMojaIngest(snapshot, existing.data, { today });
+    const plan = planMojaIngest(snapshot, existing.data, { today, clubCode: club.fft_club_code });
     const tournamentChannel = await channelIdByName(db, clubId, CHANNEL_NAMES.tournaments);
 
     // 1. Tournois → ids Radar

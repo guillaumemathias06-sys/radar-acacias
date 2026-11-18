@@ -12,6 +12,7 @@
   const RECENT_DAYS = 14;
   const DETAILS_PER_UPLOAD = 8;
   const MAX_PLAYER_PAGES = 40;
+  const CLUB_CODE = "62060315"; // TC Acacias — Radar ne garde que les tournois du club
   let running = false;
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -93,7 +94,10 @@
     const homologations = await getJson("/moja/api/spa/homologations");
     if (!Array.isArray(homologations)) throw new Error("Réponse Moja inattendue (homologations).");
     const since = new Date(Date.now() - RECENT_DAYS * 86_400_000).toISOString().slice(0, 10);
-    const targets = homologations.filter((h) => mode === "all" || !h.dateFin || String(h.dateFin).slice(0, 10) >= since);
+    // Tournois du club, non refusés par la Ligue (les autres font planter Moja et n'intéressent pas Radar).
+    const clubHoms = homologations.filter((h) => h.codeClub === CLUB_CODE && h.statutValidationLigue !== "REFUSE");
+    const targets = clubHoms.filter((h) => mode === "all" || !h.dateFin || String(h.dateFin).slice(0, 10) >= since);
+    const failed = [];
     const collectedAt = new Date().toISOString();
     const totals = {};
     const warnings = new Set();
@@ -101,7 +105,7 @@
     let sent = 0;
 
     const flush = async () => {
-      const res = await upload({ collectedAt, homologations, details: pending });
+      const res = await upload({ collectedAt, homologations: clubHoms, details: pending });
       for (const [k, v] of Object.entries(res.counts)) totals[k] = (totals[k] ?? 0) + (Number(v) || 0);
       res.warnings.forEach((w) => warnings.add(w));
       pending = {};
@@ -109,14 +113,21 @@
 
     for (const [i, h] of targets.entries()) {
       show(`${i + 1}/${targets.length} tournois lus, ${sent} envoyés.\nGarde cet onglet ouvert.`);
-      const epreuves = await getJson(`/moja/api/spa/epreuves?homId=${h.homId}`);
-      const joueurs = await getAllPlayers(h.homId);
-      const disponibilites = await getJson(`/moja/api/spa/disponibilites?homId=${h.homId}`);
-      pending[String(h.homId)] = { epreuves, joueurs, disponibilites };
+      try {
+        const epreuves = await getJson(`/moja/api/spa/epreuves?homId=${h.homId}`);
+        const joueurs = await getAllPlayers(h.homId);
+        const disponibilites = await getJson(`/moja/api/spa/disponibilites?homId=${h.homId}`);
+        pending[String(h.homId)] = { epreuves, joueurs, disponibilites };
+      } catch (err) {
+        // Une session perdue arrête tout ; un tournoi illisible est seulement noté.
+        if (String(err?.message ?? err).startsWith("Moja refuse") || String(err?.message ?? err).startsWith("Pas de jeton")) throw err;
+        failed.push(`${h.libelle ?? h.homId} (${h.homId}) : ${err?.message ?? err}`);
+        continue;
+      }
       if (Object.keys(pending).length >= DETAILS_PER_UPLOAD) { const n = Object.keys(pending).length; await flush(); sent += n; }
     }
     if (Object.keys(pending).length || targets.length === 0) { const n = Object.keys(pending).length; await flush(); sent += n; }
-    return { tournaments: sent, homologations: homologations.length, totals, warnings: [...warnings] };
+    return { tournaments: sent, homologations: clubHoms.length, totals, warnings: [...warnings], failed };
   }
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -129,7 +140,8 @@
       .then((summary) => {
         chrome.runtime.sendMessage({ type: "radar-done", summary: { ok: true, mode: message.mode, ...summary } });
         const t = summary.totals;
-        const extra = summary.warnings.length ? `\n⚠️ ${summary.warnings.length} avertissement(s), voir Radar.` : "";
+        const extra = (summary.warnings.length ? `\n⚠️ ${summary.warnings.length} avertissement(s), voir Radar.` : "")
+          + (summary.failed.length ? `\n⚠️ ${summary.failed.length} tournoi(s) illisible(s) dans Moja, ignoré(s) :\n${summary.failed.slice(0, 5).join("\n")}` : "");
         show(`Terminé : ${summary.tournaments} tournoi(s) envoyé(s), ${t.registrations ?? 0} inscription(s), ${t.contacts_created ?? 0} nouveau(x) contact(s).${extra}`, "ok", true);
       })
       .catch((err) => {

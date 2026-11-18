@@ -193,4 +193,25 @@ describe("normalisation", () => {
     expect(parisLocalToIso("2026-07-04T10:00:00")).toBe("2026-07-04T08:00:00.000Z");
     expect(parisLocalToIso("2026-11-22")).toBe("2026-11-21T23:00:00.000Z");
   });
+
+  it("écarte les tournois d'autres clubs et ceux refusés par la Ligue", () => {
+    const autreClub = { ...homologation, homId: 13519, codeClub: "52290161" };
+    const refuse = { ...homologation, homId: 13520, statutValidationLigue: "REFUSE" };
+    const plan = planMojaIngest(
+      {
+        collectedAt: "2026-11-17T06:00:00Z",
+        homologations: [homologation, autreClub, refuse],
+        details: {
+          "294005": { epreuves: [epreuve], joueurs: [joueur(101, 1, "hugo", "martin", null, null, 5001)], disponibilites: [] },
+          "13519": { epreuves: [epreuve], joueurs: [joueur(201, 1, "paul", "petit", null, null, 6001)], disponibilites: [] },
+        },
+      },
+      [],
+      { today: "2026-11-17", newId, clubCode: "62060315" },
+    );
+    expect(plan.tournaments.map((t) => t.moja_hom_id)).toEqual([294005]);
+    expect(plan.counts.excluded_tournaments).toBe(2);
+    expect(plan.counts.contacts_created).toBe(1);
+    expect(plan.warnings).toEqual([]);
+  });
 });

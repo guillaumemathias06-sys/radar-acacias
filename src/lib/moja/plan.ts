@@ -48,13 +48,18 @@ export interface MojaIngestPlan {
   counts: Record<string, number>;
 }
 
-export function planMojaIngest(snapshot: MojaSnapshot, existing: ContactRecord[], options: { today: string; newId?: () => string }): MojaIngestPlan {
+export function planMojaIngest(snapshot: MojaSnapshot, existing: ContactRecord[], options: { today: string; newId?: () => string; clubCode?: string | null }): MojaIngestPlan {
   const newId = options.newId ?? (() => crypto.randomUUID());
   const warnings: string[] = [];
 
   const homs = safeParseList(homologationSchema, snapshot.homologations);
   if (homs.skipped) warnings.push(`${homs.skipped} homologation(s) illisible(s) : ${homs.firstIssue}`);
-  const tournaments = homs.items.map(toTournamentRow);
+  // Un JA voit aussi les tournois d'autres clubs où il a officié, et des
+  // homologations refusées par la Ligue (jamais jouées) : ni l'un ni l'autre
+  // n'appartient au fichier du club.
+  const keptHoms = homs.items.filter((h) => (!options.clubCode || h.codeClub === options.clubCode) && h.statutValidationLigue !== "REFUSE");
+  const excludedHoms = new Set(homs.items.filter((h) => !keptHoms.includes(h)).map((h) => h.homId));
+  const tournaments = keptHoms.map(toTournamentRow);
   const knownHoms = new Set(tournaments.map((t) => t.moja_hom_id));
 
   const index = new ContactIndex(existing);
@@ -72,6 +77,7 @@ export function planMojaIngest(snapshot: MojaSnapshot, existing: ContactRecord[]
 
   for (const [homKey, detail] of Object.entries(snapshot.details)) {
     const homId = Number(homKey);
+    if (excludedHoms.has(homId)) continue;
     if (!knownHoms.has(homId)) {
       warnings.push(`Détail reçu pour l'homologation ${homKey}, absente de la liste : ignoré.`);
       continue;
@@ -203,6 +209,7 @@ export function planMojaIngest(snapshot: MojaSnapshot, existing: ContactRecord[]
     warnings,
     counts: {
       tournaments: tournaments.length,
+      excluded_tournaments: excludedHoms.size,
       events: uniqueEvents.length,
       contacts_created: created.size,
       contacts_updated: updated.size,

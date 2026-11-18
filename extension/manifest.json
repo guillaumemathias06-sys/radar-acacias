@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Radar — Moja",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Envoie à Radar, en lecture seule, les tournois que tu consultes toi-même sur Moja.",
   "permissions": ["storage", "scripting", "activeTab"],
   "host_permissions": ["https://moja.fft.fr/*", "https://radar-acacias.vercel.app/*"],
