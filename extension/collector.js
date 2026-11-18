@@ -41,22 +41,58 @@
     }
   }
 
-  // Moja range son jeton dans le cookie « access_token » et l'envoie lui-même en
-  // en-tête Authorization. On fait pareil, en le relisant à chaque requête pour
-  // suivre son renouvellement par l'application pendant un long import.
-  function accessToken() {
-    const row = document.cookie.split("; ").find((c) => c.startsWith("access_token="));
-    return row ? decodeURIComponent(row.slice("access_token=".length)) : null;
+  // Moja range ses jetons dans les cookies « access_token » (5 min) et
+  // « refresh_token », et l'application les renouvelle elle-même auprès du SSO
+  // FFT quand il reste moins d'une minute. Pendant un long import l'application
+  // est inactive : on fait comme elle. Les jetons renouvelés restent en mémoire
+  // le temps de l'import ; les cookies de Moja ne sont jamais modifiés.
+  const SSO_TOKEN_URL = "https://login.fft.fr/realms/connect/protocol/openid-connect/token";
+  const SSO_CLIENT_ID = "moja-site";
+  const REFRESH_MARGIN_S = 60;
+  let memory = null; // { access, refresh }
+
+  function cookie(name) {
+    const row = document.cookie.split("; ").find((c) => c.startsWith(name + "="));
+    return row ? decodeURIComponent(row.slice(name.length + 1)) : null;
+  }
+  function expOf(jwt) {
+    try {
+      return JSON.parse(atob(jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).exp ?? 0;
+    } catch {
+      return 0;
+    }
+  }
+  const now = () => Math.floor(Date.now() / 1000);
+
+  async function accessToken(force = false) {
+    // Le plus récent des deux : celui de l'application (si elle a renouvelé) ou le nôtre.
+    const fromCookie = cookie("access_token");
+    let access = [fromCookie, memory?.access].filter(Boolean).sort((a, b) => expOf(b) - expOf(a))[0] ?? null;
+    if (!force && access && expOf(access) - now() > REFRESH_MARGIN_S) return access;
+
+    const refresh = [cookie("refresh_token"), memory?.refresh].filter(Boolean).sort((a, b) => expOf(b) - expOf(a))[0];
+    if (!refresh || expOf(refresh) <= now()) {
+      throw new Error("Pas de session Moja valide dans cet onglet : recharge Moja, connecte-toi, puis reclique sur le bouton.");
+    }
+    const res = await fetch(SSO_TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ grant_type: "refresh_token", client_id: SSO_CLIENT_ID, refresh_token: refresh }),
+    });
+    if (!res.ok) throw new Error(`Moja refuse l'accès : renouvellement de session impossible (${res.status}). Recharge Moja puis reclique sur le bouton.`);
+    const json = await res.json();
+    memory = { access: json.access_token, refresh: json.refresh_token ?? refresh };
+    return memory.access;
   }
 
   async function getJson(path) {
     await sleep(PAUSE_MS);
-    const token = accessToken();
-    if (!token) throw new Error("Pas de jeton Moja dans cet onglet : recharge Moja, connecte-toi, puis reclique sur le bouton.");
-    const res = await fetch(new URL(path, location.origin), {
+    const call = async (force) => fetch(new URL(path, location.origin), {
       credentials: "include",
-      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+      headers: { Accept: "application/json", Authorization: `Bearer ${await accessToken(force)}` },
     });
+    let res = await call(false);
+    if (res.status === 401) res = await call(true); // jeton expiré entre-temps : on renouvelle une fois
     const type = res.headers.get("content-type") ?? "";
     if (res.status === 401 || res.status === 403) {
       throw new Error(`Moja refuse l'accès (${res.status}) : recharge la page Moja puis reclique sur le bouton.`);
@@ -120,7 +156,7 @@
         pending[String(h.homId)] = { epreuves, joueurs, disponibilites };
       } catch (err) {
         // Une session perdue arrête tout ; un tournoi illisible est seulement noté.
-        if (String(err?.message ?? err).startsWith("Moja refuse") || String(err?.message ?? err).startsWith("Pas de jeton")) throw err;
+        if (String(err?.message ?? err).startsWith("Moja refuse") || String(err?.message ?? err).startsWith("Pas de session")) throw err;
         failed.push(`${h.libelle ?? h.homId} (${h.homId}) : ${err?.message ?? err}`);
         continue;
       }
