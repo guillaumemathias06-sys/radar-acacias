@@ -24,7 +24,8 @@ export function dateWindows(days: number, now: Date = new Date()): { start: stri
 }
 
 export async function syncPlaytomic(db: AdminClient, clubId: string, days = 3): Promise<{ ok: boolean; counts: Record<string, number>; error?: string }> {
-  const { data: connection } = await db.from("playtomic_connections").select("venue_id, status").eq("club_id", clubId).eq("status", "connected").maybeSingle();
+  const { data: connection, error: connectionError } = await db.from("playtomic_connections").select("venue_id, status").eq("club_id", clubId).eq("status", "connected").maybeSingle();
+  if (connectionError) return { ok: false, counts: {}, error: `Lecture de la connexion Playtomic impossible : ${connectionError.message}` };
   if (!connection) return { ok: false, counts: {}, error: "Playtomic n'est pas connecté." };
 
   const { data: run } = await db.from("sync_runs").insert({ club_id: clubId, source: "playtomic" }).select("id").single();
