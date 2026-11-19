@@ -19,7 +19,7 @@ export interface CampaignResult {
   stats: { sent: number; delivered: number; opened: number; clicked: number; unsubscribed: number; bounced: number; spam: number } | null;
   statsError: string | null;
   clickers: CampaignPerson[];
-  openersCount: number;
+  openers: CampaignPerson[];
   unsubscribed: CampaignPerson[];
   registrations: CampaignPerson[];
 }
@@ -97,7 +97,7 @@ export async function campaignResults(db: AdminClient, clubId: string): Promise<
           : null,
         statsError: stats.error,
         clickers: people("clicked"),
-        openersCount: new Set(rows.filter((r) => r.type === "opened").map((r) => fullName(r.contacts))).size,
+        openers: people("opened"),
         unsubscribed: people("unsubscribed"),
         registrations,
       };

@@ -5,6 +5,7 @@ import { brevo } from "@/lib/brevo/client";
 import { EMAIL_TEMPLATES } from "@/emails/templates";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { brevoWebhookSecret } from "@/lib/brevo/webhook";
+import { pullCampaignDetail } from "@/lib/brevo/pull";
 import { ACACIAS_CLUB_ID } from "@/lib/club";
 
 const WEBHOOK_URL = "https://radar-acacias.vercel.app/api/webhooks/brevo";
@@ -29,6 +30,7 @@ const bodySchema = z.discriminatedUnion("action", [
   // Test : envoyé à la liste de test configurée dans Brevo (aucune adresse ne transite par Radar).
   z.object({ action: z.literal("test"), campaignId: z.number().int().positive() }),
   z.object({ action: z.literal("send"), campaignId: z.number().int().positive() }),
+  z.object({ action: z.literal("pull"), campaignId: z.number().int().positive() }),
 ]);
 
 /** Campagnes Brevo : brouillon, test, envoi. Chaque envoi est un geste explicite. */
@@ -70,6 +72,10 @@ export async function POST(req: Request) {
         await createAdminClient().from("campaigns").update({ brevo_campaign_id: created.data.id }).eq("club_id", ACACIAS_CLUB_ID).eq("brevo_list_id", b.listId).is("brevo_campaign_id", null);
       }
       return reply(created);
+    }
+    case "pull": {
+      const r = await pullCampaignDetail(createAdminClient(), ACACIAS_CLUB_ID, b.campaignId);
+      return NextResponse.json({ ok: r.errors.length === 0, data: r.counts, error: r.errors.join(" · ") || undefined });
     }
     case "status":
       return reply(await brevo(`/emailCampaigns/${b.campaignId}`));

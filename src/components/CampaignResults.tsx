@@ -1,5 +1,6 @@
 import { Card, formatDateTime } from "@/components/ui";
 import type { CampaignResult, CampaignPerson } from "@/lib/campaigns/results";
+import { RefreshCampaign } from "@/components/RefreshCampaign";
 
 const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)} %` : "—");
 
@@ -44,7 +45,10 @@ export function CampaignResults({ result: r }: { result: CampaignResult }) {
           <p className="font-medium">{r.name}</p>
           {r.target && <p className="text-sm text-muted">Objectif : remplir {r.target}</p>}
         </div>
-        <p className="text-sm text-muted">Envoyée {formatDateTime(r.sentAt)} · Brevo n° {r.brevoCampaignId}</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm text-muted">Envoyée {formatDateTime(r.sentAt)} · Brevo n° {r.brevoCampaignId}</p>
+          <RefreshCampaign brevoCampaignId={r.brevoCampaignId} />
+        </div>
       </div>
 
       {r.statsError && <p className="mb-3 text-sm text-critical">Statistiques Brevo indisponibles : {r.statsError}</p>}
@@ -59,13 +63,14 @@ export function CampaignResults({ result: r }: { result: CampaignResult }) {
         </div>
       )}
 
-      <div className="mt-5 grid gap-5 md:grid-cols-3">
+      <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         <People title="Inscrits après l'e-mail" people={r.registrations} empty="Aucun pour l'instant (mis à jour à chaque import Moja)." />
         <People title="Ont cliqué" people={r.clickers} empty="Aucun clic reçu pour l'instant." />
+        <People title="Ont ouvert" people={r.openers} empty="Clique sur « Actualiser le détail »." />
         <People title="Se sont désinscrits" people={r.unsubscribed} empty="Aucune désinscription." />
       </div>
       <p className="mt-4 text-xs text-muted">
-        Chiffres globaux : Brevo, en direct. Détail par joueur : webhook Brevo, depuis son activation{r.openersCount ? ` (${r.openersCount} ouvreur(s) identifié(s))` : ""}. Les ouvertures sont approximatives (Apple Mail ouvre automatiquement).
+        Chiffres globaux : Brevo, en direct. Détail par joueur : webhook Brevo en temps réel, sinon « Actualiser le détail » (fait aussi chaque matin). Les ouvertures sont approximatives (Apple Mail ouvre automatiquement).
       </p>
     </Card>
   );
