@@ -36,6 +36,8 @@ async function exportRecipients(campaignId: number, recipientsType: string): Pro
   for (let i = 0; i < 20; i++) {
     await new Promise((r) => setTimeout(r, 1500));
     const p = await brevo<{ status: string; export_url?: string }>(`/processes/${started.data.processId}`);
+    // Export sans aucun destinataire (ex. personne n'a cliqué) : Brevo ne garde pas le processus.
+    if (p.error && /processId is invalid/i.test(p.error)) return { emails: [], error: null };
     if (p.error) return { emails: [], error: p.error };
     if (p.data?.status === "completed") {
       if (!p.data.export_url) return { emails: [], error: null };
