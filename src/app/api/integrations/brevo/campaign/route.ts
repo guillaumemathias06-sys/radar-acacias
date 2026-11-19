@@ -48,7 +48,8 @@ export async function POST(req: Request) {
       const secret = brevoWebhookSecret();
       if (!secret) return NextResponse.json({ ok: false, error: "SECRETS_ENCRYPTION_KEY absente." }, { status: 500 });
       const list = await brevo<{ webhooks?: { id: number; url: string }[] }>("/webhooks?type=marketing");
-      if (list.error) return reply(list);
+      // Brevo répond 400 « Webhook record does not exist » quand il n'y en a aucun.
+      if (list.error && !/does not exist/i.test(list.error)) return reply(list);
       const existing = list.data?.webhooks?.find((w) => w.url === WEBHOOK_URL);
       if (existing) return NextResponse.json({ ok: true, data: { id: existing.id, existing: true } });
       return reply(
