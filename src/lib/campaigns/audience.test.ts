@@ -14,6 +14,8 @@ describe("buildAudience", () => {
     expect(members.map((m) => m.email)).toEqual(["a@x.fr", "e@x.fr"]);
     expect(counts.deja_inscrits).toBe(1);
     expect(buildAudience(target, regs, contacts, { scope: "tout", ...none }).members).toHaveLength(3);
+    // « inferieur » : P25 et P50 seulement, pas le P100 de d (déjà inscrit de toute façon) ni le P500 de b.
+    expect(buildAudience(target, [...regs, r("b", "5", "P100")], contacts, { scope: "inferieur", ...none }).members.map((m) => m.email)).toEqual(["a@x.fr", "e@x.fr"]);
   });
 
   it("respecte la nature, le genre en mixte, les refus et désinscriptions", () => {

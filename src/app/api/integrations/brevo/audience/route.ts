@@ -11,7 +11,7 @@ export const maxDuration = 60;
 
 const bodySchema = z.object({
   eventId: z.string().uuid(),
-  scope: z.enum(["proche", "tout"]),
+  scope: z.enum(["proche", "inferieur", "tout"]),
   action: z.enum(["preview", "export"]),
 });
 
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     if (!members.length) return NextResponse.json({ ok: false, error: "Audience vide : rien à envoyer à Brevo." }, { status: 400 });
 
     const stamp = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" }).format(new Date());
-    const name = `Radar · ${target.tournament} · ${scope === "proche" ? "niveaux proches" : "tout le padel"} · ${stamp}`;
+    const name = `Radar · ${target.tournament} · ${{ proche: "niveaux proches", inferieur: "même niveau et en dessous", tout: "tout le padel" }[scope]} · ${stamp}`;
     const { listId, error } = await createBrevoList(name, members);
     if (error) return NextResponse.json({ ok: false, error, listId }, { status: 502 });
 

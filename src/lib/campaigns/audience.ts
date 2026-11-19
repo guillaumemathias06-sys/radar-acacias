@@ -5,14 +5,15 @@
  * joueurs qui ont déjà joué une épreuve de padel compatible :
  *   - même nature (DM pour DM, DD pour DD) ou mixte (DX) avec le bon genre ;
  *   - niveau « proche » : catégorie cible ± 1 cran (P25 / P50 / P100 pour un
- *     P50), ou « tout le padel » si on veut ratisser large.
+ *     P50) ; « inferieur » : la catégorie cible et en dessous (P25 / P50 pour
+ *     un P50) ; ou « tout le padel » si on veut ratisser large.
  * Sont exclus : les inscrits à l'épreuve cible (quel que soit leur statut),
  * les refus de consentement e-mail, les e-mails désinscrits, les fiches
  * sans e-mail. Un e-mail partagé (famille) n'apparaît qu'une fois.
  */
 import { PADEL_CATEGORIES, normalizePadelCategory } from "@/lib/tournaments/segments";
 
-export type AudienceScope = "proche" | "tout";
+export type AudienceScope = "proche" | "inferieur" | "tout";
 
 export interface AudienceTarget {
   eventId: string;
@@ -68,9 +69,11 @@ export function buildAudience(
     const sameNature = r.nature === target.nature;
     const mixedOk = r.nature === "DX" && gender !== undefined && c.gender === gender;
     if (!sameNature && !mixedOk) continue;
-    if (opts.scope === "proche" && targetIdx >= 0) {
+    if (opts.scope !== "tout" && targetIdx >= 0) {
       const idx = categoryIndex(r.padelCategory);
-      if (idx < 0 || Math.abs(idx - targetIdx) > 1) continue;
+      if (idx < 0) continue;
+      if (opts.scope === "proche" && Math.abs(idx - targetIdx) > 1) continue;
+      if (opts.scope === "inferieur" && idx > targetIdx) continue;
     }
     eligible.add(r.contactId);
   }

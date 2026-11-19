@@ -14,7 +14,7 @@ const LABELS: [string, string][] = [
 ];
 
 export function BrevoAudience({ eventId, connected }: { eventId: string; connected: boolean }) {
-  const [scope, setScope] = useState<"proche" | "tout">("proche");
+  const [scope, setScope] = useState<"proche" | "inferieur" | "tout">("proche");
   const [counts, setCounts] = useState<Counts | null>(null);
   const [state, setState] = useState<{ busy: boolean; message: string | null; ok: boolean }>({ busy: false, message: null, ok: false });
 
@@ -36,10 +36,11 @@ export function BrevoAudience({ eventId, connected }: { eventId: string; connect
       <div className="flex flex-wrap items-center gap-2">
         <select
           value={scope}
-          onChange={(e) => { const s = e.target.value as "proche" | "tout"; setScope(s); setCounts(null); void call("preview", s); }}
+          onChange={(e) => { const s = e.target.value as "proche" | "inferieur" | "tout"; setScope(s); setCounts(null); void call("preview", s); }}
           className="rounded-md border border-border bg-background px-2 py-2 text-sm"
         >
           <option value="proche">Niveaux proches (± 1 catégorie)</option>
+          <option value="inferieur">Même catégorie et en dessous</option>
           <option value="tout">Tout le padel, même tableau</option>
         </select>
         <button disabled={state.busy} onClick={() => call("preview")} className="rounded-md border border-border px-3 py-2 text-sm disabled:opacity-60">Calculer l&apos;audience</button>
