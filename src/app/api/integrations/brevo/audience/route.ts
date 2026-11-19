@@ -46,6 +46,8 @@ export async function POST(req: Request) {
         name,
         objective: `Remplir ${target.tournament} (${target.event}) — liste Brevo #${listId}, ${members.length} contact(s).`,
         status: "draft",
+        brevo_list_id: listId,
+        target_event_id: eventId,
         starts_on: new Date().toISOString().slice(0, 10),
         utm_campaign: `radar-${target.padelCategory?.toLowerCase() ?? "padel"}-${eventId.slice(0, 8)}`,
       });

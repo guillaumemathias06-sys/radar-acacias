@@ -8,7 +8,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // de session Supabase et ont leur propre authentification par secret,
 // vérifiée dans la route elle-même. Sans ces exceptions, ils recevraient
 // une redirection vers /login et n'atteindraient jamais leur code.
-const MACHINE_PREFIXES = ["/api/cron/", "/api/ingest/"];
+const MACHINE_PREFIXES = ["/api/cron/", "/api/ingest/", "/api/webhooks/"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
