@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { LayoutDashboard, Trophy, Users, Radio, Settings } from "lucide-react";
+import { LayoutDashboard, Trophy, Users, Radio, Settings, Send } from "lucide-react";
 
 const NAV = [
   { href: "/", label: "Tableau de bord", icon: LayoutDashboard },
   { href: "/tournois", label: "Tournois", icon: Trophy },
   { href: "/contacts", label: "Contacts", icon: Users },
+  { href: "/campagnes", label: "Campagnes", icon: Send },
   { href: "/canaux", label: "Canaux", icon: Radio },
   { href: "/reglages", label: "Réglages", icon: Settings },
 ];
