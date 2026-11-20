@@ -70,7 +70,7 @@ export function CampaignResults({ result: r }: { result: CampaignResult }) {
         <People title="Se sont désinscrits" people={r.unsubscribed} empty="Aucune désinscription." />
       </div>
       <p className="mt-4 text-xs text-muted">
-        Chiffres globaux : Brevo, en direct. Détail par joueur : webhook Brevo en temps réel, sinon « Actualiser le détail » (fait aussi chaque matin). Les ouvertures sont approximatives (Apple Mail ouvre automatiquement).
+        Chiffres globaux : Brevo, en direct. Détail par joueur : webhook Brevo en temps réel, sinon « Actualiser le détail » (fait aussi chaque matin ; Radar n'exporte chez Brevo que ce qui a changé, chaque export déclenche un mail de Brevo). Les ouvertures sont approximatives (Apple Mail ouvre automatiquement).
       </p>
     </Card>
   );
